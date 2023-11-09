@@ -1,0 +1,171 @@
+name: windows-x64-debug
+
+on:
+  push:
+    branches:
+      - master
+    paths:
+      - '.github/workflows/windows-x64-debug.yaml'
+
+  pull_request:
+    branches:
+      - master
+    paths:
+      - '.github/workflows/windows-x64-debug.yaml'
+
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Version information（e.g., 1.16.0）"
+        required: true
+
+permissions:
+  contents: write
+
+env:
+  ONNXRUNTIME_VERSION:
+    |- # Enter release tag name or version name in workflow_dispatch. Appropriate version if not specified
+    ${{ github.event.release.tag_name || github.event.inputs.version || '1.16.1' }}
+
+jobs:
+  windows_x64_static_debug:
+    name: Build onnxruntime static lib for Windows x64
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [windows-latest]
+
+    steps:
+      - name: Cache build result for ${{ env.ONNXRUNTIME_VERSION }}
+        id: cache-build-result
+        uses: actions/cache@v2
+        with:
+          path: onnxruntime-win-x64-static-debug-${{ env.ONNXRUNTIME_VERSION }}
+          key: onnxruntime-win-x64-static-debug-${{ env.ONNXRUNTIME_VERSION }}-cache-v1
+
+      - name: Checkout v${{ env.ONNXRUNTIME_VERSION }}
+        if: steps.cache-build-result.outputs.cache-hit != 'true'
+        uses: actions/checkout@v2
+        with:
+          repository: microsoft/onnxruntime
+          submodules: true
+          ref: v${{ env.ONNXRUNTIME_VERSION }}
+
+      - name: Install dependencies on Windows
+        if: steps.cache-build-result.outputs.cache-hit != 'true'
+        shell: bash
+        run: |
+          python3 -m pip install cmake
+          cmake --version
+          cmake --help
+
+      - name: Build onnxruntime ${{ env.ONNXRUNTIME_VERSION }} for Win64
+        if: steps.cache-build-result.outputs.cache-hit != 'true'
+        shell: bash
+        run: |
+          build_dir=./build/windows_x64_static_debug
+          python3 ./tools/ci_build/build.py \
+            --build_dir $build_dir \
+            --config Debug \
+            --parallel \
+            --enable_msvc_static_runtime \
+            --cmake_generator "Visual Studio 17 2022" \
+            --skip_tests \
+            --update \
+            --build
+            # --cmake_extra_defines onnxruntime_BUILD_UNIT_TESTS=OFF \
+            # --cmake_extra_defines onnxruntime_BUILD_SHARED_LIB=OFF
+
+      - name: Copy results
+        if: steps.cache-build-result.outputs.cache-hit != 'true'
+        shell: bash
+        run: |
+          build_dir=./build/windows_x64_static_debug
+          version=${{ env.ONNXRUNTIME_VERSION }}
+          dst_dir=onnxruntime-win-x64-static-debug-$version
+
+          mkdir -p $dst_dir
+          mkdir -p $dst_dir/lib
+
+          echo "copy libs"
+          find $build_dir/ -name "*.lib"
+
+          cp $build_dir/Debug/_deps/abseil_cpp-build/absl/base/Debug/absl_base.lib $dst_dir/lib
+          cp $build_dir/Debug/_deps/abseil_cpp-build/absl/hash/Debug/absl_city.lib $dst_dir/lib
+          cp $build_dir/Debug/_deps/abseil_cpp-build/absl/hash/Debug/absl_hash.lib $dst_dir/lib
+          cp $build_dir/Debug/_deps/abseil_cpp-build/absl/hash/Debug/absl_low_level_hash.lib $dst_dir/lib
+          cp $build_dir/Debug/_deps/abseil_cpp-build/absl/container/Debug/absl_raw_hash_set.lib $dst_dir/lib
+          cp $build_dir/Debug/_deps/abseil_cpp-build/absl/base/Debug/absl_raw_logging_internal.lib $dst_dir/lib
+          cp $build_dir/Debug/_deps/abseil_cpp-build/absl/base/Debug/absl_throw_delegate.lib $dst_dir/lib
+          cp $build_dir/Debug/_deps/pytorch_cpuinfo-build/deps/clog/Debug/clog.lib $dst_dir/lib
+          cp $build_dir/Debug/_deps/pytorch_cpuinfo-build/Debug/cpuinfo.lib $dst_dir/lib
+          cp $build_dir/Debug/_deps/flatbuffers-build/Debug/flatbuffers.lib $dst_dir/lib
+          cp $build_dir/Debug/_deps/onnx-build/Debug/onnx.lib $dst_dir/lib
+          cp $build_dir/Debug/_deps/onnx-build/Debug/onnx_proto.lib $dst_dir/lib
+          cp $build_dir/Debug/Debug/onnxruntime_common.lib $dst_dir/lib
+          cp $build_dir/Debug/Debug/onnxruntime_flatbuffers.lib $dst_dir/lib
+          cp $build_dir/Debug/Debug/onnxruntime_framework.lib $dst_dir/lib
+          cp $build_dir/Debug/Debug/onnxruntime_graph.lib $dst_dir/lib
+          cp $build_dir/Debug/Debug/onnxruntime_mlas.lib $dst_dir/lib
+          cp $build_dir/Debug/Debug/onnxruntime_optimizer.lib $dst_dir/lib
+          cp $build_dir/Debug/Debug/onnxruntime_providers.lib $dst_dir/lib
+          cp $build_dir/Debug/Debug/onnxruntime_session.lib $dst_dir/lib
+          cp $build_dir/Debug/Debug/onnxruntime_util.lib $dst_dir/lib
+          cp $build_dir/Debug/_deps/re2-build/Debug/re2.lib $dst_dir/lib
+          cp $build_dir/Debug/_deps/protobuf-build/Debug/libprotobuf-lite.lib $dst_dir/lib
+
+
+          echo "copy headers"
+
+          mkdir $dst_dir/include
+
+          cp ./include/onnxruntime/core/providers/cpu/cpu_provider_factory.h $dst_dir/include/
+          cp ./include/onnxruntime/core/session/onnxruntime_c_api.h $dst_dir/include
+          cp ./include/onnxruntime/core/session/onnxruntime_cxx_api.h $dst_dir/include
+          cp ./include/onnxruntime/core/session/onnxruntime_cxx_inline.h $dst_dir/include
+          cp ./include/onnxruntime/core/session/onnxruntime_run_options_config_keys.h $dst_dir/include
+          cp ./include/onnxruntime/core/session/onnxruntime_session_options_config_keys.h $dst_dir/include
+          cp ./include/onnxruntime/core/framework/provider_options.h $dst_dir/include
+          cp ./include/onnxruntime/core/providers/tensorrt/tensorrt_provider_factory.h $dst_dir/include
+
+          cp ./include/onnxruntime/core/session/onnxruntime_float16.h $dst_dir/include
+
+      - name: Upload artifact
+        if: steps.cache-build-result.outputs.cache-hit != 'true'
+        uses: actions/upload-artifact@v2
+        with:
+          name: onnxruntime-win-x64-static-debug-${{ env.ONNXRUNTIME_VERSION }}
+          path: onnxruntime-win-x64-static-debug-${{ env.ONNXRUNTIME_VERSION }}
+
+      # https://huggingface.co/docs/hub/spaces-github-actions
+      - name: Publish to huggingface (onnxruntime-libs)
+        if: github.repository_owner == 'csukuangfj' && steps.cache-build-result.outputs.cache-hit != 'true'
+        shell: bash
+        env:
+          HF_TOKEN: ${{ secrets.HF_TOKEN }}
+        run: |
+          version=${{ env.ONNXRUNTIME_VERSION }}
+          dst_dir=onnxruntime-win-x64-static-debug-$version
+
+          tar cjvf $dst_dir.tar.bz2 $dst_dir
+
+          ls -lh
+
+          git config --global user.email "csukuangfj@gmail.com"
+          git config --global user.name "Fangjun Kuang"
+
+          GIT_LFS_SKIP_SMUDGE=1 git clone https://huggingface.co/csukuangfj/onnxruntime-libs huggingface
+
+          cd huggingface
+          git lfs pull
+          cp -v ../$dst_dir.tar.bz2 ./
+          git status
+          git lfs track "*.bz2"
+
+          git add .
+
+          git commit -m "upload $dst_dir.tar.bz2"
+          git push https://csukuangfj:$HF_TOKEN@huggingface.co/csukuangfj/onnxruntime-libs main
+          cd ..
+          rm -rf huggingface
