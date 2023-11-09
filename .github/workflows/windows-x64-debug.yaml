@@ -29,7 +29,7 @@ env:
 
 jobs:
   windows_x64_static_debug:
-    name: Build onnxruntime static lib for Windows x64
+    name: Build onnxruntime static lib for Windows x64 debug
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
@@ -60,7 +60,7 @@ jobs:
           cmake --version
           cmake --help
 
-      - name: Build onnxruntime ${{ env.ONNXRUNTIME_VERSION }} for Win64
+      - name: Build onnxruntime ${{ env.ONNXRUNTIME_VERSION }} for Win64-debug
         if: steps.cache-build-result.outputs.cache-hit != 'true'
         shell: bash
         run: |
@@ -113,7 +113,7 @@ jobs:
           cp $build_dir/Debug/Debug/onnxruntime_session.lib $dst_dir/lib
           cp $build_dir/Debug/Debug/onnxruntime_util.lib $dst_dir/lib
           cp $build_dir/Debug/_deps/re2-build/Debug/re2.lib $dst_dir/lib
-          cp $build_dir/Debug/_deps/protobuf-build/Debug/libprotobuf-lite.lib $dst_dir/lib
+          cp $build_dir/Debug/_deps/protobuf-build/Debug/libprotobuf-lited.lib $dst_dir/lib
 
 
           echo "copy headers"
