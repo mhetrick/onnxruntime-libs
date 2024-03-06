@@ -73,6 +73,7 @@ jobs:
             --cmake_generator "Visual Studio 17 2022" \
             --skip_tests \
             --update \
+            --use_dml \
             --build
             # --cmake_extra_defines onnxruntime_BUILD_UNIT_TESTS=OFF \
             # --cmake_extra_defines onnxruntime_BUILD_SHARED_LIB=OFF
