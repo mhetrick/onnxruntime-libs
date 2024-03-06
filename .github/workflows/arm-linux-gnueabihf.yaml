@@ -1,22 +1,10 @@
 name: arm-linux-gnueabihf
 
 on:
-  push:
-    branches:
-      - master
-    paths:
-      - '.github/workflows/arm-linux-gnueabihf.yaml'
-
-  pull_request:
-    branches:
-      - master
-    paths:
-      - '.github/workflows/arm-linux-gnueabihf.yaml'
-
   workflow_dispatch:
     inputs:
       version:
-        description: "Version information（e.g., 1.16.0）"
+        description: "Version information（e.g., 1.17.0）"
         required: true
 
 permissions:
@@ -25,7 +13,7 @@ permissions:
 env:
   ONNXRUNTIME_VERSION:
     |- # Enter release tag name or version name in workflow_dispatch. Appropriate version if not specified
-    ${{ github.event.release.tag_name || github.event.inputs.version || '1.16.0' }}
+    ${{ github.event.release.tag_name || github.event.inputs.version || '1.17.0' }}
 
 jobs:
   arm_linux_gnueabihf:
@@ -82,7 +70,7 @@ jobs:
           if [[ ${{ env.ONNXRUNTIME_VERSION }} =~ 1.14.[0-9] ]]; then
             wget https://github.com/protocolbuffers/protobuf/releases/download/v3.20.3/protoc-3.20.3-linux-x86_64.zip
             unzip protoc-3.20.3-linux-x86_64.zip
-          elif [[ ${{ env.ONNXRUNTIME_VERSION }} =~ 1.1[56].[0-9] ]]; then
+          elif [[ ${{ env.ONNXRUNTIME_VERSION }} =~ 1.1[567].[0-9] ]]; then
             wget https://github.com/protocolbuffers/protobuf/releases/download/v21.12/protoc-21.12-linux-x86_64.zip
             unzip protoc-21.12-linux-x86_64.zip
           else
@@ -129,6 +117,13 @@ jobs:
           sudo apt-get install python3 git-lfs
           python3 -m pip install cmake
           cmake --version
+
+      - name: apply patch
+        shell: bash
+        run: |
+          cd tools/ci_build
+          sed -i.bak s/-fcf-protection// ./build.py
+          git diff
 
       - name: Build onnxruntime for 32-bit ARM
         if: steps.cache-build-result.outputs.cache-hit != 'true'
@@ -182,6 +177,18 @@ jobs:
 
           cp -v ./include/onnxruntime/core/session/onnxruntime_float16.h ./onnxruntime-linux-arm-$version/include
 
+          zip -r onnxruntime-linux-arm-${version}.zip ./onnxruntime-linux-arm-$version/
+
+      - name: Upload v${{ env.ONNXRUNTIME_VERSION }}
+        if: steps.cache-build-result.outputs.cache-hit != 'true'
+        uses: svenstaro/upload-release-action@v2
+        with:
+          file_glob: true
+          file: "./*.zip"
+          overwrite: true
+          tag: v${{ env.ONNXRUNTIME_VERSION }}
+
+
       # https://huggingface.co/docs/hub/spaces-github-actions
       - name: Publish to huggingface
         if: github.repository_owner == 'csukuangfj' && steps.cache-build-result.outputs.cache-hit != 'true'
@@ -193,8 +200,6 @@ jobs:
           version=${{ env.ONNXRUNTIME_VERSION }}
 
           tree ./onnxruntime-linux-arm-$version/
-
-          zip -r onnxruntime-linux-arm-${version}.zip ./onnxruntime-linux-arm-$version/
 
           git config --global user.email "csukuangfj@gmail.com"
           git config --global user.name "Fangjun Kuang"
