@@ -93,7 +93,7 @@ jobs:
 
           cp $build_dir/packages/Microsoft.AI.DirectML.1.13.1/bin/x64-win/DirectML.lib $dst_dir/lib
 
-          cp $build_dir/packages/Microsoft.Windows.CppWinRT.2.0.201201.7/build/native/lib/x64/cppwinrt_fast_forwarder.lib
+          cp $build_dir/packages/Microsoft.Windows.CppWinRT.2.0.201201.7/build/native/lib/x64/cppwinrt_fast_forwarder.lib $dst_dir/lib
 
           cp $build_dir/Debug/_deps/abseil_cpp-build/absl/base/Debug/*.lib $dst_dir/lib
           cp $build_dir/Debug/_deps/abseil_cpp-build/absl/container/Debug/*.lib $dst_dir/lib
