@@ -25,7 +25,7 @@ permissions:
 env:
   ONNXRUNTIME_VERSION:
     |- # Enter release tag name or version name in workflow_dispatch. Appropriate version if not specified
-    ${{ github.event.release.tag_name || github.event.inputs.version || '1.17.1' }}
+    ${{ github.event.release.tag_name || github.event.inputs.version || '1.16.2' }}
 
 jobs:
   windows_x64_static_debug:
@@ -92,29 +92,33 @@ jobs:
           echo "copy libs"
           find $build_dir/ -name "*.lib"
 
-          cp $build_dir/Debug/_deps/abseil_cpp-build/absl/base/Debug/absl_base.lib $dst_dir/lib
-          cp $build_dir/Debug/_deps/abseil_cpp-build/absl/hash/Debug/absl_city.lib $dst_dir/lib
-          cp $build_dir/Debug/_deps/abseil_cpp-build/absl/hash/Debug/absl_hash.lib $dst_dir/lib
-          cp $build_dir/Debug/_deps/abseil_cpp-build/absl/hash/Debug/absl_low_level_hash.lib $dst_dir/lib
-          cp $build_dir/Debug/_deps/abseil_cpp-build/absl/container/Debug/absl_raw_hash_set.lib $dst_dir/lib
-          cp $build_dir/Debug/_deps/abseil_cpp-build/absl/base/Debug/absl_raw_logging_internal.lib $dst_dir/lib
-          cp $build_dir/Debug/_deps/abseil_cpp-build/absl/base/Debug/absl_throw_delegate.lib $dst_dir/lib
-          cp $build_dir/Debug/_deps/pytorch_cpuinfo-build/deps/clog/Debug/clog.lib $dst_dir/lib
+          cp $build_dir/packages/Microsoft.AI.DirectML.1.13.1/bin/x64-win/DirectML.lib $dst_dir/lib
+
+          cp $build_dir/Debug/_deps/abseil_cpp-build/absl/base/Debug/*.lib $dst_dir/lib
+          cp $build_dir/Debug/_deps/abseil_cpp-build/absl/container/Debug/*.lib $dst_dir/lib
+          cp $build_dir/Debug/_deps/abseil_cpp-build/absl/crc/Debug/*.lib $dst_dir/lib
+          cp $build_dir/Debug/_deps/abseil_cpp-build/absl/debugging/Debug/*.lib $dst_dir/lib
+          cp $build_dir/Debug/_deps/abseil_cpp-build/absl/flags/Debug/*.lib $dst_dir/lib
+          cp $build_dir/Debug/_deps/abseil_cpp-build/absl/hash/Debug/*.lib $dst_dir/lib
+          cp $build_dir/Debug/_deps/abseil_cpp-build/absl/numeric/Debug/*.lib $dst_dir/lib
+          cp $build_dir/Debug/_deps/abseil_cpp-build/absl/profiling/Debug/*.lib $dst_dir/lib
+          cp $build_dir/Debug/_deps/abseil_cpp-build/absl/strings/Debug/*.lib $dst_dir/lib
+          cp $build_dir/Debug/_deps/abseil_cpp-build/absl/synchronization/Debug/*.lib $dst_dir/lib
+          cp $build_dir/Debug/_deps/abseil_cpp-build/absl/time/Debug/*.lib $dst_dir/lib
+          cp $build_dir/Debug/_deps/abseil_cpp-build/absl/types/Debug/*.lib $dst_dir/lib
+
+          cp $build_dir/Debug/_deps/pytorch_clog-build/Debug/clog.lib $dst_dir/lib
           cp $build_dir/Debug/_deps/pytorch_cpuinfo-build/Debug/cpuinfo.lib $dst_dir/lib
+
           cp $build_dir/Debug/_deps/flatbuffers-build/Debug/flatbuffers.lib $dst_dir/lib
-          cp $build_dir/Debug/_deps/onnx-build/Debug/onnx.lib $dst_dir/lib
-          cp $build_dir/Debug/_deps/onnx-build/Debug/onnx_proto.lib $dst_dir/lib
-          cp $build_dir/Debug/Debug/onnxruntime_common.lib $dst_dir/lib
-          cp $build_dir/Debug/Debug/onnxruntime_flatbuffers.lib $dst_dir/lib
-          cp $build_dir/Debug/Debug/onnxruntime_framework.lib $dst_dir/lib
-          cp $build_dir/Debug/Debug/onnxruntime_graph.lib $dst_dir/lib
-          cp $build_dir/Debug/Debug/onnxruntime_mlas.lib $dst_dir/lib
-          cp $build_dir/Debug/Debug/onnxruntime_optimizer.lib $dst_dir/lib
-          cp $build_dir/Debug/Debug/onnxruntime_providers.lib $dst_dir/lib
-          cp $build_dir/Debug/Debug/onnxruntime_session.lib $dst_dir/lib
-          cp $build_dir/Debug/Debug/onnxruntime_util.lib $dst_dir/lib
+
+          cp $build_dir/Debug/_deps/onnx-build/Debug/*.lib $dst_dir/lib
+
+          cp $build_dir/Debug/Debug/*.lib $dst_dir/lib
+
           cp $build_dir/Debug/_deps/re2-build/Debug/re2.lib $dst_dir/lib
-          cp $build_dir/Debug/_deps/protobuf-build/Debug/libprotobuf-lited.lib $dst_dir/lib
+
+          cp $build_dir/Debug/_deps/protobuf-build/Debug/*.lib $dst_dir/lib
 
 
           echo "copy headers"
@@ -128,7 +132,7 @@ jobs:
           cp ./include/onnxruntime/core/session/onnxruntime_run_options_config_keys.h $dst_dir/include
           cp ./include/onnxruntime/core/session/onnxruntime_session_options_config_keys.h $dst_dir/include
           cp ./include/onnxruntime/core/framework/provider_options.h $dst_dir/include
-          cp ./include/onnxruntime/core/providers/tensorrt/tensorrt_provider_factory.h $dst_dir/include
+          cp ./include/onnxruntime/core/providers/dml/dml_provider_factory.h $dst_dir/include
 
           cp ./include/onnxruntime/core/session/onnxruntime_float16.h $dst_dir/include
 
