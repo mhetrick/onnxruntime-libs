@@ -79,7 +79,6 @@ jobs:
             # --cmake_extra_defines onnxruntime_BUILD_SHARED_LIB=OFF
 
       - name: Copy results
-        if: steps.cache-build-result.outputs.cache-hit != 'true'
         shell: bash
         run: |
           build_dir=./build/windows_x64_static_debug
@@ -93,6 +92,8 @@ jobs:
           find $build_dir/ -name "*.lib"
 
           cp $build_dir/packages/Microsoft.AI.DirectML.1.13.1/bin/x64-win/DirectML.lib $dst_dir/lib
+
+          cp $build_dir/packages/Microsoft.Windows.CppWinRT.2.0.201201.7/build/native/lib/x64/cppwinrt_fast_forwarder.lib
 
           cp $build_dir/Debug/_deps/abseil_cpp-build/absl/base/Debug/*.lib $dst_dir/lib
           cp $build_dir/Debug/_deps/abseil_cpp-build/absl/container/Debug/*.lib $dst_dir/lib
@@ -115,6 +116,7 @@ jobs:
           cp $build_dir/Debug/_deps/onnx-build/Debug/*.lib $dst_dir/lib
 
           cp $build_dir/Debug/Debug/*.lib $dst_dir/lib
+          cp $build_dir/Debug/lib/Debug/*.lib $dst_dir/lib
 
           cp $build_dir/Debug/_deps/re2-build/Debug/re2.lib $dst_dir/lib
 
