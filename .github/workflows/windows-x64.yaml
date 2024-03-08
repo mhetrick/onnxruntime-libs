@@ -16,7 +16,7 @@ on:
   workflow_dispatch:
     inputs:
       version:
-        description: "Version information（e.g., 1.16.2）"
+        description: "Version information（e.g., 1.17.1）"
         required: true
 
 permissions:
@@ -79,7 +79,6 @@ jobs:
             # --cmake_extra_defines onnxruntime_BUILD_SHARED_LIB=OFF
 
       - name: Copy results
-        if: steps.cache-build-result.outputs.cache-hit != 'true'
         shell: bash
         run: |
           build_dir=./build/windows_x64_static
@@ -93,6 +92,8 @@ jobs:
           find $build_dir/ -name "*.lib"
 
           cp $build_dir/packages/Microsoft.AI.DirectML.1.13.1/bin/x64-win/DirectML.lib $dst_dir/lib
+
+          cp $build_dir/packages/Microsoft.Windows.CppWinRT.2.0.201201.7/build/native/lib/x64/cppwinrt_fast_forwarder.lib
 
           cp $build_dir/Release/_deps/abseil_cpp-build/absl/base/Release/*.lib $dst_dir/lib
           cp $build_dir/Release/_deps/abseil_cpp-build/absl/container/Release/*.lib $dst_dir/lib
@@ -115,10 +116,12 @@ jobs:
           cp $build_dir/Release/_deps/onnx-build/Release/*.lib $dst_dir/lib
 
           cp $build_dir/Release/Release/*.lib $dst_dir/lib
+          cp $build_dir/Release/lib/Release/*.lib $dst_dir/lib
 
           cp $build_dir/Release/_deps/re2-build/Release/re2.lib $dst_dir/lib
 
           cp $build_dir/Release/_deps/protobuf-build/Release/*.lib $dst_dir/lib
+
 
           echo "copy headers"
 
