@@ -90,7 +90,7 @@ jobs:
           echo "copy libs"
           find $build_dir/ -name "*.lib"
 
-          cp $build_dir/packages/Microsoft.AI.DirectML.1.13.1/bin/x64-win/DirectML.lib $dst_dir/lib
+          cp $build_dir/packages/Microsoft.AI.DirectML.1.14.1/bin/x64-win/DirectML.lib $dst_dir/lib
 
           cp $build_dir/packages/Microsoft.Windows.CppWinRT.2.0.201201.7/build/native/lib/x64/cppwinrt_fast_forwarder.lib $dst_dir/lib
 
