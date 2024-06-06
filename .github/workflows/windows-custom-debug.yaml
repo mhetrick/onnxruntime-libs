@@ -1,0 +1,146 @@
+name: windows-custom-debug
+
+on:
+  push:
+    branches:
+      - master
+    paths:
+      - '.github/workflows/windows-custom-debug.yaml'
+
+  pull_request:
+    branches:
+      - master
+    paths:
+      - '.github/workflows/windows-custom-debug.yaml'
+
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Version information（e.g., 1.17.3）"
+        required: true
+
+permissions:
+  contents: write
+
+env:
+  ONNXRUNTIME_VERSION:
+    |- # Enter release tag name or version name in workflow_dispatch. Appropriate version if not specified
+    ${{ github.event.release.tag_name || github.event.inputs.version || '1.18.0' }}
+
+jobs:
+  windows_custom_static_debug:
+    name: Build onnxruntime static lib for Windows x64 (custom) debug
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [windows-latest]
+
+    steps:
+      - name: Cache build result for ${{ env.ONNXRUNTIME_VERSION }}
+        id: cache-build-result
+        uses: actions/cache@v2
+        with:
+          path: onnxruntime-win-custom-static-debug-${{ env.ONNXRUNTIME_VERSION }}
+          key: onnxruntime-win-custom-static-debug-${{ env.ONNXRUNTIME_VERSION }}-cache-v1
+
+      - name: Checkout v${{ env.ONNXRUNTIME_VERSION }}
+        if: steps.cache-build-result.outputs.cache-hit != 'true'
+        uses: actions/checkout@v2
+        with:
+          repository: mhetrick/onnxruntime
+          submodules: true
+          ref: v${{ env.ONNXRUNTIME_VERSION }}
+
+      - name: Install dependencies on Windows
+        if: steps.cache-build-result.outputs.cache-hit != 'true'
+        shell: bash
+        run: |
+          python3 -m pip install cmake
+          cmake --version
+          cmake --help
+
+      - name: Build onnxruntime ${{ env.ONNXRUNTIME_VERSION }} for Win64-debug
+        if: steps.cache-build-result.outputs.cache-hit != 'true'
+        shell: bash
+        run: |
+          build_dir=./build/windows_custom_static_debug
+          python3 ./tools/ci_build/build.py \
+            --build_dir $build_dir \
+            --config Debug \
+            --parallel \
+            --enable_msvc_static_runtime \
+            --cmake_generator "Visual Studio 17 2022" \
+            --skip_tests \
+            --update \
+            --use_dml \
+            --build
+            # --cmake_extra_defines onnxruntime_BUILD_UNIT_TESTS=OFF \
+            # --cmake_extra_defines onnxruntime_BUILD_SHARED_LIB=OFF
+
+      - name: Copy results
+        shell: bash
+        run: |
+          build_dir=./build/windows_custom_static_debug
+          version=${{ env.ONNXRUNTIME_VERSION }}
+          dst_dir=onnxruntime-win-custom-static-debug-$version
+
+          mkdir -p $dst_dir
+          mkdir -p $dst_dir/lib
+
+          echo "copy libs"
+          find $build_dir/ -name "*.lib"
+
+          cp $build_dir/packages/Microsoft.AI.DirectML.1.13.1/bin/x64-win/DirectML.lib $dst_dir/lib
+
+          cp $build_dir/packages/Microsoft.Windows.CppWinRT.2.0.201201.7/build/native/lib/x64/cppwinrt_fast_forwarder.lib $dst_dir/lib
+
+          cp $build_dir/Debug/_deps/abseil_cpp-build/absl/base/Debug/*.lib $dst_dir/lib
+          cp $build_dir/Debug/_deps/abseil_cpp-build/absl/container/Debug/*.lib $dst_dir/lib
+          cp $build_dir/Debug/_deps/abseil_cpp-build/absl/crc/Debug/*.lib $dst_dir/lib
+          cp $build_dir/Debug/_deps/abseil_cpp-build/absl/debugging/Debug/*.lib $dst_dir/lib
+          cp $build_dir/Debug/_deps/abseil_cpp-build/absl/flags/Debug/*.lib $dst_dir/lib
+          cp $build_dir/Debug/_deps/abseil_cpp-build/absl/hash/Debug/*.lib $dst_dir/lib
+          cp $build_dir/Debug/_deps/abseil_cpp-build/absl/numeric/Debug/*.lib $dst_dir/lib
+          cp $build_dir/Debug/_deps/abseil_cpp-build/absl/profiling/Debug/*.lib $dst_dir/lib
+          cp $build_dir/Debug/_deps/abseil_cpp-build/absl/strings/Debug/*.lib $dst_dir/lib
+          cp $build_dir/Debug/_deps/abseil_cpp-build/absl/synchronization/Debug/*.lib $dst_dir/lib
+          cp $build_dir/Debug/_deps/abseil_cpp-build/absl/time/Debug/*.lib $dst_dir/lib
+          cp $build_dir/Debug/_deps/abseil_cpp-build/absl/types/Debug/*.lib $dst_dir/lib
+
+          cp $build_dir/Debug/_deps/pytorch_clog-build/Debug/clog.lib $dst_dir/lib
+          cp $build_dir/Debug/_deps/pytorch_cpuinfo-build/Debug/cpuinfo.lib $dst_dir/lib
+
+          cp $build_dir/Debug/_deps/flatbuffers-build/Debug/flatbuffers.lib $dst_dir/lib
+
+          cp $build_dir/Debug/_deps/onnx-build/Debug/*.lib $dst_dir/lib
+
+          cp $build_dir/Debug/Debug/*.lib $dst_dir/lib
+          cp $build_dir/Debug/lib/Debug/*.lib $dst_dir/lib
+
+          cp $build_dir/Debug/_deps/re2-build/Debug/re2.lib $dst_dir/lib
+
+          cp $build_dir/Debug/_deps/protobuf-build/Debug/*.lib $dst_dir/lib
+
+
+          echo "copy headers"
+
+          mkdir $dst_dir/include
+
+          cp ./include/onnxruntime/core/providers/cpu/cpu_provider_factory.h $dst_dir/include/
+          cp ./include/onnxruntime/core/session/onnxruntime_c_api.h $dst_dir/include
+          cp ./include/onnxruntime/core/session/onnxruntime_cxx_api.h $dst_dir/include
+          cp ./include/onnxruntime/core/session/onnxruntime_cxx_inline.h $dst_dir/include
+          cp ./include/onnxruntime/core/session/onnxruntime_run_options_config_keys.h $dst_dir/include
+          cp ./include/onnxruntime/core/session/onnxruntime_session_options_config_keys.h $dst_dir/include
+          cp ./include/onnxruntime/core/framework/provider_options.h $dst_dir/include
+          cp ./include/onnxruntime/core/providers/dml/dml_provider_factory.h $dst_dir/include
+
+          cp ./include/onnxruntime/core/session/onnxruntime_float16.h $dst_dir/include
+
+      - name: Upload artifact
+        if: steps.cache-build-result.outputs.cache-hit != 'true'
+        uses: actions/upload-artifact@v2
+        with:
+          name: onnxruntime-win-custom-static-debug-${{ env.ONNXRUNTIME_VERSION }}
+          path: onnxruntime-win-custom-static-debug-${{ env.ONNXRUNTIME_VERSION }}
