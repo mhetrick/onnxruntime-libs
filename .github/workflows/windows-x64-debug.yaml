@@ -25,7 +25,7 @@ permissions:
 env:
   ONNXRUNTIME_VERSION:
     |- # Enter release tag name or version name in workflow_dispatch. Appropriate version if not specified
-    ${{ github.event.release.tag_name || github.event.inputs.version || '1.17.3' }}
+    ${{ github.event.release.tag_name || github.event.inputs.version || '1.18.0' }}
 
 jobs:
   windows_x64_static_debug:
@@ -90,8 +90,11 @@ jobs:
 
           echo "copy libs"
           find $build_dir/ -name "*.lib"
+          find $build_dir/ -name "*.dll"
 
-          cp $build_dir/packages/Microsoft.AI.DirectML.1.13.1/bin/x64-win/DirectML.lib $dst_dir/lib
+          cp $build_dir/packages/Microsoft.AI.DirectML.1.14.1/bin/x64-win/DirectML.lib $dst_dir/lib
+          cp $build_dir/packages/Microsoft.AI.DirectML.1.14.1/bin/x64-win/DirectML.dll $dst_dir/lib
+          cp $build_dir/packages/Microsoft.AI.DirectML.1.14.1/bin/x64-win/DirectML.Debug.dll $dst_dir/lib
 
           cp $build_dir/packages/Microsoft.Windows.CppWinRT.2.0.201201.7/build/native/lib/x64/cppwinrt_fast_forwarder.lib $dst_dir/lib
 
@@ -138,41 +141,12 @@ jobs:
 
           cp ./include/onnxruntime/core/session/onnxruntime_float16.h $dst_dir/include
 
+          cp $build_dir/packages/Microsoft.AI.DirectML.1.14.1/include/DirectML.h $dst_dir/include
+          cp $build_dir/packages/Microsoft.AI.DirectML.1.14.1/include/DirectMLConfig.h $dst_dir/include
+
       - name: Upload artifact
         if: steps.cache-build-result.outputs.cache-hit != 'true'
         uses: actions/upload-artifact@v2
         with:
           name: onnxruntime-win-x64-static-debug-${{ env.ONNXRUNTIME_VERSION }}
           path: onnxruntime-win-x64-static-debug-${{ env.ONNXRUNTIME_VERSION }}
-
-      # https://huggingface.co/docs/hub/spaces-github-actions
-      - name: Publish to huggingface (onnxruntime-libs)
-        if: github.repository_owner == 'csukuangfj' && steps.cache-build-result.outputs.cache-hit != 'true'
-        shell: bash
-        env:
-          HF_TOKEN: ${{ secrets.HF_TOKEN }}
-        run: |
-          version=${{ env.ONNXRUNTIME_VERSION }}
-          dst_dir=onnxruntime-win-x64-static-debug-$version
-
-          tar cjvf $dst_dir.tar.bz2 $dst_dir
-
-          ls -lh
-
-          git config --global user.email "csukuangfj@gmail.com"
-          git config --global user.name "Fangjun Kuang"
-
-          GIT_LFS_SKIP_SMUDGE=1 git clone https://huggingface.co/csukuangfj/onnxruntime-libs huggingface
-
-          cd huggingface
-          git lfs pull
-          cp -v ../$dst_dir.tar.bz2 ./
-          git status
-          git lfs track "*.bz2"
-
-          git add .
-
-          git commit -m "upload $dst_dir.tar.bz2"
-          git push https://csukuangfj:$HF_TOKEN@huggingface.co/csukuangfj/onnxruntime-libs main
-          cd ..
-          rm -rf huggingface

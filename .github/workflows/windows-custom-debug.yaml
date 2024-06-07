@@ -89,8 +89,11 @@ jobs:
 
           echo "copy libs"
           find $build_dir/ -name "*.lib"
+          find $build_dir/ -name "*.dll"
 
           cp $build_dir/packages/Microsoft.AI.DirectML.1.14.1/bin/x64-win/DirectML.lib $dst_dir/lib
+          cp $build_dir/packages/Microsoft.AI.DirectML.1.14.1/bin/x64-win/DirectML.dll $dst_dir/lib
+          cp $build_dir/packages/Microsoft.AI.DirectML.1.14.1/bin/x64-win/DirectML.Debug.dll $dst_dir/lib
 
           cp $build_dir/packages/Microsoft.Windows.CppWinRT.2.0.201201.7/build/native/lib/x64/cppwinrt_fast_forwarder.lib $dst_dir/lib
 
@@ -136,6 +139,9 @@ jobs:
           cp ./include/onnxruntime/core/providers/dml/dml_provider_factory.h $dst_dir/include
 
           cp ./include/onnxruntime/core/session/onnxruntime_float16.h $dst_dir/include
+
+          cp $build_dir/packages/Microsoft.AI.DirectML.1.14.1/include/DirectML.h $dst_dir/include
+          cp $build_dir/packages/Microsoft.AI.DirectML.1.14.1/include/DirectMLConfig.h $dst_dir/include
 
       - name: Upload artifact
         if: steps.cache-build-result.outputs.cache-hit != 'true'
