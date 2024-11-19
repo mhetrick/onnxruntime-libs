@@ -26,6 +26,8 @@ env:
   ONNXRUNTIME_VERSION:
     |- # Enter release tag name or version name in workflow_dispatch. Appropriate version if not specified
     ${{ github.event.release.tag_name || github.event.inputs.version || '1.20.0' }}
+  DIRECTML_VERSION:
+    ${{'1.15.2'}}
 
 jobs:
   windows_x64_static_debug:
@@ -92,9 +94,9 @@ jobs:
           find $build_dir/ -name "*.lib"
           find $build_dir/ -name "*.dll"
 
-          cp $build_dir/packages/Microsoft.AI.DirectML.1.14.1/bin/x64-win/DirectML.lib $dst_dir/lib
-          cp $build_dir/packages/Microsoft.AI.DirectML.1.14.1/bin/x64-win/DirectML.dll $dst_dir/lib
-          cp $build_dir/packages/Microsoft.AI.DirectML.1.14.1/bin/x64-win/DirectML.Debug.dll $dst_dir/lib
+          cp $build_dir/packages/Microsoft.AI.DirectML.${{ env.DIRECTML_VERSION }}/bin/x64-win/DirectML.lib $dst_dir/lib
+          cp $build_dir/packages/Microsoft.AI.DirectML.${{ env.DIRECTML_VERSION }}/bin/x64-win/DirectML.dll $dst_dir/lib
+          cp $build_dir/packages/Microsoft.AI.DirectML.${{ env.DIRECTML_VERSION }}/bin/x64-win/DirectML.Debug.dll $dst_dir/lib
 
           cp $build_dir/packages/Microsoft.Windows.CppWinRT.2.0.201201.7/build/native/lib/x64/cppwinrt_fast_forwarder.lib $dst_dir/lib
 
@@ -141,8 +143,8 @@ jobs:
 
           cp ./include/onnxruntime/core/session/onnxruntime_float16.h $dst_dir/include
 
-          cp $build_dir/packages/Microsoft.AI.DirectML.1.14.1/include/DirectML.h $dst_dir/include
-          cp $build_dir/packages/Microsoft.AI.DirectML.1.14.1/include/DirectMLConfig.h $dst_dir/include
+          cp $build_dir/packages/Microsoft.AI.DirectML.${{ env.DIRECTML_VERSION }}/include/DirectML.h $dst_dir/include
+          cp $build_dir/packages/Microsoft.AI.DirectML.${{ env.DIRECTML_VERSION }}/include/DirectMLConfig.h $dst_dir/include
 
       - name: Upload artifact
         if: steps.cache-build-result.outputs.cache-hit != 'true'
